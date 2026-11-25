@@ -183,9 +183,10 @@ if (SR) {
     say(text);
   };
 
-  rec.onerror = () => {
-    status.textContent = "Provo përsëri!";
-  };
+  rec.onerror = (event) => {
+  status.textContent = "Gabimi: " + event.error;
+};
+
 
   rec.onend = () => {
     if (active && !speaking) {
