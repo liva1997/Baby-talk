@@ -1,0 +1,236 @@
+
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Baby Talk</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(160deg,#fff0f5,#e7f2ff);
+  color: #70465a;
+  text-align: center;
+}
+
+main {
+  max-width: 460px;
+  margin: auto;
+  padding: 22px 18px;
+}
+
+h1 {
+  color: #d94f86;
+  font-size: 32px;
+}
+
+.photo {
+  width: 85%;
+  max-width: 340px;
+  aspect-ratio: 3/4;
+  object-fit: cover;
+  border-radius: 26px;
+  box-shadow: 0 12px 35px #9e668433;
+}
+
+.photo.talking {
+  animation: talk .22s infinite alternate;
+}
+
+@keyframes talk {
+  to { transform: scale(1.02); }
+}
+
+.bubble {
+  background: white;
+  border-radius: 18px;
+  padding: 18px;
+  margin: 20px auto;
+  min-height: 55px;
+}
+
+button {
+  border: 0;
+  border-radius: 30px;
+  padding: 16px 22px;
+  font-size: 16px;
+  margin: 7px;
+}
+
+#start {
+  background: #e85d91;
+  color: white;
+}
+
+#stop {
+  background: white;
+  color: #87566d;
+}
+</style>
+</head>
+
+<body>
+<main>
+
+<h1>🎀 Baby Talk 🎀</h1>
+<p>Ti flet, bebja të përsërit! ❤️</p>
+
+<img
+  class="photo"
+  id="baby"
+  src="baby.jpeg"
+  alt="Bebja ime"
+>
+
+<div class="bubble" id="words">
+Përshëndetje! Fol me mua ❤️
+</div>
+
+<p id="status">Bebja është gati!</p>
+
+<button id="start">
+🎤 AKTIVIZO MIKROFONIN
+</button>
+
+<button id="stop">
+⏹ NDALO
+</button>
+
+</main>
+
+<script>
+
+const SR =
+window.SpeechRecognition ||
+window.webkitSpeechRecognition;
+
+const baby = document.getElementById("baby");
+const words = document.getElementById("words");
+const status = document.getElementById("status");
+
+let rec = null;
+let active = false;
+let speaking = false;
+
+function say(text) {
+
+  if (!text.trim()) return;
+
+  speaking = true;
+
+  if (rec) rec.stop();
+
+  const voice = new SpeechSynthesisUtterance(text);
+
+  voice.lang = "sq-AL";
+  voice.pitch = 1.55;
+  voice.rate = 0.88;
+
+  baby.classList.add("talking");
+
+  voice.onend = finish;
+  voice.onerror = finish;
+
+  speechSynthesis.cancel();
+  speechSynthesis.speak(voice);
+}
+
+function finish() {
+
+  speaking = false;
+  baby.classList.remove("talking");
+
+  if (active) {
+    setTimeout(startListening, 650);
+  }
+}
+
+function startListening() {
+
+  if (!active || !rec || speaking) return;
+
+  try {
+    rec.start();
+  } catch(e) {}
+}
+
+if (SR) {
+
+  rec = new SR();
+
+  rec.lang = "sq-AL";
+  rec.continuous = false;
+  rec.interimResults = false;
+
+  rec.onstart = () => {
+    status.textContent = "👂 Bebja po të dëgjon...";
+  };
+
+  rec.onresult = (event) => {
+
+    const text =
+      event.results[event.results.length - 1][0].transcript;
+
+    words.textContent = "Ti the: " + text;
+
+    status.textContent = "❤️ Bebja po të përsërit!";
+
+    say(text);
+  };
+
+  rec.onerror = () => {
+    status.textContent = "Provo përsëri!";
+  };
+
+  rec.onend = () => {
+    if (active && !speaking) {
+      setTimeout(startListening, 650);
+    }
+  };
+
+}
+
+document.getElementById("start").onclick = () => {
+
+  if (!rec) {
+    status.textContent =
+      "Njohja e zërit nuk mbështetet në këtë Safari.";
+    return;
+  }
+
+  active = true;
+  startListening();
+};
+
+document.getElementById("stop").onclick = () => {
+
+  active = false;
+
+  if (rec) rec.stop();
+
+  speechSynthesis.cancel();
+
+  baby.classList.remove("talking");
+
+  speaking = false;
+
+  status.textContent = "Bebja pushoi ❤️";
+};
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    active = false;
+    if (rec) rec.stop();
+    speechSynthesis.cancel();
+  }
+});
+
+</script>
+
+</body>
+</html>
