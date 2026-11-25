@@ -54,6 +54,17 @@ h1 {
   min-height: 55px;
 }
 
+textarea {
+  width: 100%;
+  min-height: 90px;
+  border: 2px solid #f0b6ce;
+  border-radius: 16px;
+  padding: 14px;
+  font-size: 17px;
+  font-family: Arial;
+  resize: vertical;
+}
+
 button {
   border: 0;
   border-radius: 30px;
@@ -91,146 +102,73 @@ button {
 Përshëndetje! Fol me mua ❤️
 </div>
 
-<p id="status">Bebja është gati!</p>
+<p>Shkruaj ose dikto fjalët këtu:</p>
+
+<textarea id="message"
+placeholder="Prek mikrofonin e tastierës dhe fol..."></textarea>
+
+<br>
 
 <button id="start">
-🎤 AKTIVIZO MIKROFONIN
+❤️ BEBJA FLET
 </button>
 
 <button id="stop">
 ⏹ NDALO
 </button>
 
+<p id="status">Bebja është gati! ❤️</p>
+
 </main>
 
 <script>
-
-const SR =
-window.SpeechRecognition ||
-window.webkitSpeechRecognition;
-
 const baby = document.getElementById("baby");
 const words = document.getElementById("words");
 const status = document.getElementById("status");
-
-let rec = null;
-let active = false;
-let speaking = false;
+const message = document.getElementById("message");
 
 function say(text) {
+  text = text.trim();
 
-  if (!text.trim()) return;
-
-  speaking = true;
-
-  if (rec) rec.stop();
-
-  const voice = new SpeechSynthesisUtterance(text);
-
-  voice.lang = "sq-AL";
-  voice.pitch = 1.55;
-  voice.rate = 0.88;
-
-  baby.classList.add("talking");
-
-  voice.onend = finish;
-  voice.onerror = finish;
-
-  speechSynthesis.cancel();
-  speechSynthesis.speak(voice);
-}
-
-function finish() {
-
-  speaking = false;
-  baby.classList.remove("talking");
-
-  if (active) {
-    setTimeout(startListening, 650);
-  }
-}
-
-function startListening() {
-
-  if (!active || !rec || speaking) return;
-
-  try {
-    rec.start();
-  } catch(e) {}
-}
-
-if (SR) {
-
-  rec = new SR();
-
-  rec.lang = "sq-AL";
-  rec.continuous = false;
-  rec.interimResults = false;
-
-  rec.onstart = () => {
-    status.textContent = "👂 Bebja po të dëgjon...";
-  };
-
-  rec.onresult = (event) => {
-
-    const text =
-      event.results[event.results.length - 1][0].transcript;
-
-    words.textContent = "Ti the: " + text;
-
-    status.textContent = "❤️ Bebja po të përsërit!";
-
-    say(text);
-  };
-
-  rec.onerror = (event) => {
-  status.textContent = "Gabimi: " + event.error;
-};
-
-
-  rec.onend = () => {
-    if (active && !speaking) {
-      setTimeout(startListening, 650);
-    }
-  };
-
-}
-
-document.getElementById("start").onclick = () => {
-
-  if (!rec) {
-    status.textContent =
-      "Njohja e zërit nuk mbështetet në këtë Safari.";
+  if (!text) {
+    status.textContent = "Shkruaj diçka për beben! ❤️";
     return;
   }
 
-  active = true;
-  startListening();
+  speechSynthesis.cancel();
+
+  words.textContent = "Ti the: " + text;
+  status.textContent = "❤️ Bebja po të përsërit!";
+
+  baby.classList.add("talking");
+
+  const voice = new SpeechSynthesisUtterance(text);
+  voice.lang = "sq-AL";
+  voice.pitch = 1.6;
+  voice.rate = 0.85;
+
+  voice.onend = () => {
+    baby.classList.remove("talking");
+    status.textContent = "Bebja është gati përsëri! ❤️";
+  };
+
+  voice.onerror = () => {
+    baby.classList.remove("talking");
+    status.textContent = "Provo përsëri!";
+  };
+
+  speechSynthesis.speak(voice);
+}
+
+document.getElementById("start").onclick = () => {
+  say(message.value);
 };
 
 document.getElementById("stop").onclick = () => {
-
-  active = false;
-
-  if (rec) rec.stop();
-
   speechSynthesis.cancel();
-
   baby.classList.remove("talking");
-
-  speaking = false;
-
   status.textContent = "Bebja pushoi ❤️";
 };
-
-document.addEventListener("visibilitychange", () => {
-  if (document.hidden) {
-    active = false;
-    if (rec) rec.stop();
-    speechSynthesis.cancel();
-  }
-});
-
 </script>
 
 </body>
